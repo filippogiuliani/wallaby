@@ -60,6 +60,7 @@ export default {
   'meal.what_eaten': 'Cosa ha mangiato', 'meal.repeat': 'Ripeti un {meal}', 'meal.no_previous': 'Nessun pasto precedente.',
   'meal.copied': 'Alimenti copiati: controlla le porzioni', 'meal.remove': 'Togli {name}', 'meal.portion_of': 'Porzione di {name}',
   'meal.empty': 'Tocca gli alimenti qui sotto o scegli un barattolo', 'meal.add_foods': 'Aggiungi alimenti',
+  'meal.only': 'Ha mangiato:', 'meal.group_protein': 'Proteine',
   'meal.notes': 'Note', 'meal.notes_example': 'Es. ha mangiato volentieri, un po\' stanco…',
   'meal.reaction': 'Reazione o sintomi (rossori, mal di pancia…)', 'meal.reaction_badge': 'reazione',
   'meal.save': 'Salva pasto', 'meal.saved': 'Pasto salvato', 'meal.updated': 'Pasto aggiornato',

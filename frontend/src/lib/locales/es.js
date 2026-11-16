@@ -60,6 +60,7 @@ export default {
   'meal.what_eaten': 'Qué ha comido', 'meal.repeat': 'Repetir {meal}', 'meal.no_previous': 'No hay comidas anteriores.',
   'meal.copied': 'Alimentos copiados: revisa las raciones', 'meal.remove': 'Quitar {name}', 'meal.portion_of': 'Ración de {name}',
   'meal.empty': 'Toca los alimentos de abajo o elige un tarro', 'meal.add_foods': 'Añadir alimentos',
+  'meal.only': 'Comió:', 'meal.group_protein': 'Proteínas',
   'meal.notes': 'Notas', 'meal.notes_example': 'P. ej. comió con ganas, algo cansado…',
   'meal.reaction': 'Reacción o síntomas (rojeces, dolor de tripa…)', 'meal.reaction_badge': 'reacción',
   'meal.save': 'Guardar comida', 'meal.saved': 'Comida guardada', 'meal.updated': 'Comida actualizada',

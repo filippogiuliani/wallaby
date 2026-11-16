@@ -60,6 +60,7 @@ export default {
   'meal.what_eaten': 'What they ate', 'meal.repeat': 'Repeat a {meal}', 'meal.no_previous': 'No previous meals.',
   'meal.copied': 'Foods copied: check the portions', 'meal.remove': 'Remove {name}', 'meal.portion_of': 'Portion of {name}',
   'meal.empty': 'Tap the foods below or choose a jar', 'meal.add_foods': 'Add foods',
+  'meal.only': 'Ate:', 'meal.group_protein': 'Protein',
   'meal.notes': 'Notes', 'meal.notes_example': 'E.g. ate happily, a bit tired…',
   'meal.reaction': 'Reaction or symptoms (redness, tummy ache…)', 'meal.reaction_badge': 'reaction',
   'meal.save': 'Save meal', 'meal.saved': 'Meal saved', 'meal.updated': 'Meal updated',

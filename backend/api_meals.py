@@ -86,15 +86,18 @@ def _read(d):
 
 
 def _save_contents(conn, meal_id, v):
-    # Jars used in the meal: their foods join the meal (unless already listed) and the jar is marked as used
+    # Jars used in the meal are marked as used. Their foods join the meal only when no food is listed:
+    # otherwise the list says what was actually eaten (e.g. only the protein of the jar).
+    fill = not v['items']
     for jar_id in v['jars']:
         j = conn.execute('SELECT id, meal_id, used_on FROM jars WHERE id = ? AND family_id = ?', (jar_id, g.family_id)).fetchone()
         if not j:
             abort(400, 'Jar does not exist')
         if j['used_on'] and j['meal_id'] != meal_id:
             abort(409, 'One of the jars has already been used')
-        for (food_id,) in conn.execute('SELECT food_id FROM jar_foods WHERE jar_id = ?', (jar_id,)):
-            v['items'].setdefault(food_id, 'full')
+        if fill:
+            for (food_id,) in conn.execute('SELECT food_id FROM jar_foods WHERE jar_id = ?', (jar_id,)):
+                v['items'].setdefault(food_id, 'full')
         conn.execute('UPDATE jars SET used_on = ?, meal_id = ? WHERE id = ?', (v['date'], meal_id, jar_id))
 
     check_family_foods(conn, list(v['items']))

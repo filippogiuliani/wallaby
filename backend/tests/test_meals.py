@@ -87,6 +87,17 @@ def test_jar_used_by_a_meal(family):
     assert [j['id'] for j in ok(f.c.get('/api/jars'))] == [jar_id]
 
 
+def test_meal_with_part_of_a_jar(family):
+    f = family
+    ok(f.c.post('/api/jars', json={'labels': ['8'], 'location': 'fridge', 'made_on': '2026-11-01',
+                                   'foods': [f.food['Zucca'], f.food['Mela']]}), 201)
+    jar_id = ok(f.c.get('/api/jars'))[0]['id']
+    # Only one food of the jar was eaten: the other one is not added back
+    meal_id = f.meal(f.one, '2026-11-08', ['Mela'], jars=[jar_id])
+    meal = next(m for m in ok(f.c.get(f'/api/meals?child={f.one}&from=2026-11-08&to=2026-11-08')) if m['id'] == meal_id)
+    assert [x['name'] for x in meal['foods']] == ['Mela'] and [j['id'] for j in meal['jars']] == [jar_id]
+
+
 def test_jars_move_and_validation(family):
     f = family
     ids = ok(f.c.post('/api/jars', json={'labels': ['1', '2', ' '], 'location': 'fridge', 'made_on': '2026-11-01',

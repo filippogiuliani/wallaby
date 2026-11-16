@@ -1,8 +1,8 @@
 <script>
   import { onMount, untrack } from 'svelte';
   import { del, get, post, put } from '../lib/api.js';
-  import { activeChildren, app, food, loadCatalog, showError, toast } from '../lib/store.svelte.js';
-  import { inSentence, locationName, mealTypeName, t } from '../lib/i18n.svelte.js';
+  import { activeChildren, app, category, food, loadCatalog, showError, toast } from '../lib/store.svelte.js';
+  import { categoryName, inSentence, locationName, mealTypeName, t } from '../lib/i18n.svelte.js';
   import { AMOUNTS, MEAL_TYPES } from '../lib/constants.js';
   import { fmtLong, fmtShort } from '../lib/date.js';
   import Sheet from './Sheet.svelte';
@@ -40,6 +40,23 @@
   });
 
   const selected = $derived(items.map((i) => i.id));
+
+  // "Ate only…": quick way to keep only some groups (e.g. the protein) of a jar or of the planned meal
+  const GROUPS = ['carbs', 'broth', 'vegetables', 'protein', 'fruit'];
+  const groupOf = (id) => category(food(id)?.category_id).diary_group ?? 'protein';
+  let setAside = $state([]); // items taken out by the group chips, to put back if tapped again
+  const groups = $derived(GROUPS.filter((g) => items.some((i) => groupOf(i.id) === g) || setAside.some((i) => groupOf(i.id) === g)));
+  const groupOn = (g) => items.some((i) => groupOf(i.id) === g);
+  function toggleGroup(g) {
+    if (groupOn(g)) {
+      setAside.push(...items.filter((i) => groupOf(i.id) === g));
+      items = items.filter((i) => groupOf(i.id) !== g);
+    } else {
+      items.push(...setAside.filter((i) => groupOf(i.id) === g && !items.some((x) => x.id === i.id)));
+      setAside = setAside.filter((i) => groupOf(i.id) !== g);
+    }
+  }
+  const groupName = (g) => (g === 'protein' ? t('meal.group_protein') : categoryName(g));
 
   function toggleFood(id) {
     const i = items.findIndex((x) => x.id === id);
@@ -151,6 +168,15 @@
         </div>
       {/if}
 
+      {#if groups.length > 1}
+        <div class="only">
+          <span class="muted small">{t('meal.only')}</span>
+          {#each groups as g (g)}
+            <button type="button" class="chip" class:on={groupOn(g)} aria-pressed={groupOn(g)} onclick={() => toggleGroup(g)}>{groupName(g)}</button>
+          {/each}
+        </div>
+      {/if}
+
       {#if items.length}
         <ul class="items">
           {#each items as item (item.id)}
@@ -190,7 +216,7 @@
 
   {#snippet footer()}
     {#if meal}<button class="btn danger" onclick={remove}>{t('common.delete')}</button>{/if}
-    <button class="btn primary grow" disabled={saving || (!items.length && !chosenJars.length) || !date || !childId} onclick={save}>
+    <button class="btn primary grow" disabled={saving || !items.length || !date || !childId} onclick={save}>
       {saving ? t('common.saving') : meal ? t('common.save_changes') : t('meal.save')}
     </button>
   {/snippet}
@@ -223,6 +249,12 @@
   .qty button.on { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
   .qty button.no.on { background: var(--danger); border-color: var(--danger); color: white; }
   @media (min-width: 640px) { .qty { display: flex; } .qty button { padding: 0 14px; font-size: 0.84rem; } }
+  .only { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .only .chip {
+    border: 1px solid var(--line); cursor: pointer; min-height: 32px; padding: 0 12px; border-radius: 999px;
+    background: var(--surface); color: var(--muted); font-size: 0.82rem; text-decoration: line-through;
+  }
+  .only .chip.on { background: var(--primary-soft); border-color: var(--primary); color: var(--ink); text-decoration: none; font-weight: 600; }
   .picker { padding: 14px; border-radius: var(--r-md); border: 1px dashed var(--line-strong); }
   .prev { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: var(--r-md); background: var(--primary-soft); }
   .prev-item { text-align: left; border: 0; cursor: pointer; padding: 10px 12px; border-radius: var(--r-sm); background: var(--surface); display: flex; gap: 10px; font-size: 0.9rem; }

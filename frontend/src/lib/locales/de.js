@@ -60,6 +60,7 @@ export default {
   'meal.what_eaten': 'Was gegessen wurde', 'meal.repeat': '{meal} wiederholen', 'meal.no_previous': 'Keine früheren Mahlzeiten.',
   'meal.copied': 'Lebensmittel übernommen: bitte Portionen prüfen', 'meal.remove': '{name} entfernen', 'meal.portion_of': 'Portion von {name}',
   'meal.empty': 'Tippe unten auf Lebensmittel oder wähle ein Glas', 'meal.add_foods': 'Lebensmittel hinzufügen',
+  'meal.only': 'Gegessen:', 'meal.group_protein': 'Eiweiß',
   'meal.notes': 'Notizen', 'meal.notes_example': 'Z. B. mit Appetit gegessen, etwas müde…',
   'meal.reaction': 'Reaktion oder Symptome (Rötung, Bauchweh…)', 'meal.reaction_badge': 'Reaktion',
   'meal.save': 'Mahlzeit speichern', 'meal.saved': 'Mahlzeit gespeichert', 'meal.updated': 'Mahlzeit aktualisiert',
