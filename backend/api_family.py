@@ -136,7 +136,7 @@ def create_child():
 def update_child(child_id):
     d = body()
     if hub.enabled():
-        # Name and birth date come from weHub; archiving (weaning over) is eaTrack's own
+        # Name and birth date come from Wombat; archiving (weaning over) is Wallaby's own
         with db.transaction() as conn:
             if conn.execute('UPDATE children SET archived = ? WHERE id = ? AND family_id = ?',
                             (1 if d.get('archived') else 0, child_id, g.family_id)).rowcount == 0:
@@ -171,7 +171,7 @@ def delete_children_data():
     if not isinstance(ids, list) or not ids:
         abort(400, 'Choose at least one child')
     if d.get('profile'):
-        hub.guard()  # profiles come from weHub; deleting meals stays possible
+        hub.guard()  # profiles come from Wombat; deleting meals stays possible
     backup.create_backup('pre-delete')  # server-side safety copy of the whole database
     with db.transaction() as conn:
         ids = sorted({family_child(conn, v) for v in ids})

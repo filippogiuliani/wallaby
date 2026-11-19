@@ -38,7 +38,7 @@ def test_new_database_is_at_current_version(app):
 
 def _fresh_app_on(tmp_path, monkeypatch, setup_sql):
     """Write an old database, then start the app on it (which upgrades it)."""
-    path = tmp_path / 'old' / 'eatrack.db'
+    path = tmp_path / 'old' / 'wallaby.db'
     path.parent.mkdir()
     conn = sqlite3.connect(path)
     conn.executescript(setup_sql)

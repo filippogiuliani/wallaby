@@ -58,7 +58,7 @@ def test_json_backup_and_import(family):
                                   'menu': [{'weekday': 0, 'meal_type': 'lunch', 'notes': '30 g', 'foods': [f.food['Zucchina']]}]}))
     dump = f.c.get('/api/export/json').data
     data = json.loads(dump)
-    assert data['app'] == 'eatrack' and len(data['tables']['meals']) == 1 and str(f.one) in data['plans']
+    assert data['app'] == 'wallaby' and len(data['tables']['meals']) == 1 and str(f.one) in data['plans']
 
     # Later changes are replaced by the import
     f.meal(f.two, '2026-11-09', ['Pera'])
@@ -79,7 +79,7 @@ def test_json_backup_and_import(family):
 def test_import_of_a_backup_made_before_v5(family):
     """Backups exported by older versions use Italian names and values."""
     legacy = {
-        'app': 'eatrack', 'versione': 4, 'famiglia': 'Vecchia',
+        'app': 'wallaby', 'versione': 4, 'famiglia': 'Vecchia',
         'categorie': [{'id': 3, 'nome': 'Verdura'}, {'id': 6, 'nome': 'Pesce'}],
         'tabelle': {
             'bambini': [{'id': 10, 'nome': 'Giulia', 'data_nascita': '2026-01-15', 'archiviato': 0}],
@@ -117,7 +117,7 @@ def test_import_rejects_invalid_files(family):
     assert upload(f.c, b'{}', 'b.txt').status_code == 400
     assert upload(f.c, b'not json').status_code == 400
     assert upload(f.c, json.dumps({'app': 'other'}).encode()).status_code == 400
-    assert upload(f.c, json.dumps({'app': 'eatrack', 'tables': {'meals': 'x'}}).encode()).status_code == 400
+    assert upload(f.c, json.dumps({'app': 'wallaby', 'tables': {'meals': 'x'}}).encode()).status_code == 400
     assert len(ok(f.c.get('/api/me'))['children']) == 2  # nothing changed
 
 

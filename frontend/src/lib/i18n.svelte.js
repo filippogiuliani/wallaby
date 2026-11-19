@@ -15,7 +15,7 @@ export const LANGUAGES = [
   { id: 'de', name: 'Deutsch' },
 ];
 const DICTIONARIES = { it, en, es, pt, fr, de };
-const STORAGE_KEY = 'eatrack.language';
+const STORAGE_KEY = 'wallaby.language';
 
 export const DEFAULT_LANGUAGE = 'en';
 // Browser preferences, e.g. ['pt-BR', 'pt', 'en-US']

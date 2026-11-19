@@ -9,7 +9,7 @@ export const app = $state({
   childId: null,
 });
 
-const CHILD_KEY = 'eatrack.child';
+const CHILD_KEY = 'wallaby.child';
 const readLocal = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const writeLocal = (k, v) => { try { localStorage.setItem(k, v); } catch { /* storage unavailable */ } };
 

@@ -18,10 +18,10 @@
   let slotEditor = $state(null); // { weekday, meal_type, notes, foods, alsoOn: [weekdays] }
   let copyFrom = $state('');
 
-  // doTrack: the week's foods go to the family's shopping list
-  let dotrack = $state(null);
+  // Kooka: the week's foods go to the family's shopping list
+  let kooka = $state(null);
   let shopping = $state(null); // { names: [...], chosen: [...] } while choosing what to send
-  $effect(() => { get('/integrations/dotrack').then((d) => (dotrack = d)).catch(() => {}); });
+  $effect(() => { get('/integrations/kooka').then((d) => (kooka = d)).catch(() => {}); });
   function openShopping() {
     const names = [...new Set(menu.flatMap((s) => s.foods).map((id) => food(id)?.name).filter(Boolean))].sort((a, b) => a.localeCompare(b));
     shopping = { names, chosen: [...names] };
@@ -31,13 +31,13 @@
   async function sendShopping() {
     sending = true;
     try {
-      const r = await post('/integrations/dotrack/send', { items: shopping.chosen });
-      toast(t('dotrack.sent', { n: r.added, list: r.list_name }) + (r.skipped ? ' ' + t('dotrack.skipped', { n: r.skipped }) : ''));
+      const r = await post('/integrations/kooka/send', { items: shopping.chosen });
+      toast(t('kooka.sent', { n: r.added, list: r.list_name }) + (r.skipped ? ' ' + t('kooka.skipped', { n: r.skipped }) : ''));
       shopping = null;
     } catch (e) { showError(e); } finally { sending = false; }
   }
 
-  // paTrack (weHub mode): the paediatrician's plans of this child archived there
+  // Pelican (Wombat mode): the paediatrician's plans of this child archived there
   let papers = $state(null); // { available, documents, error }
   $effect(() => {
     const child = app.childId;
@@ -177,8 +177,8 @@
         {#if hasMenu}<button class="btn ghost sm" onclick={() => clear('menu')}>{t('plan.clear')}</button>{/if}
       </div>
       <p class="muted small">{t('plan.menu_note')}</p>
-      {#if hasMenu && dotrack?.connected && dotrack.list_id}
-        <button class="btn soft sm shop" onclick={openShopping}>🛒 {t('dotrack.send_button', { list: dotrack.list_name })}</button>
+      {#if hasMenu && kooka?.connected && kooka.list_id}
+        <button class="btn soft sm shop" onclick={openShopping}>🛒 {t('kooka.send_button', { list: kooka.list_name })}</button>
       {/if}
       <div class="days">
         {#each WEEKDAYS as d (d)}
@@ -217,9 +217,9 @@
 {/if}
 
 {#if shopping}
-  <Sheet title={t('dotrack.send_title', { list: dotrack.list_name })} onclose={() => (shopping = null)}>
+  <Sheet title={t('kooka.send_title', { list: kooka.list_name })} onclose={() => (shopping = null)}>
     <div class="stack">
-      <p class="muted small">{t('dotrack.send_note')}</p>
+      <p class="muted small">{t('kooka.send_note')}</p>
       <div class="chips">
         {#each shopping.names as n (n)}
           <button type="button" class="chip" class:on={shopping.chosen.includes(n)} aria-pressed={shopping.chosen.includes(n)} onclick={() => toggleName(n)}>{n}</button>
@@ -228,7 +228,7 @@
     </div>
     {#snippet footer()}
       <button class="btn primary grow" disabled={!shopping.chosen.length || sending} onclick={sendShopping}>
-        {sending ? t('common.wait') : t('dotrack.send', { n: shopping.chosen.length })}</button>
+        {sending ? t('common.wait') : t('kooka.send', { n: shopping.chosen.length })}</button>
     {/snippet}
   </Sheet>
 {/if}

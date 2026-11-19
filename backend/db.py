@@ -4,8 +4,11 @@ import sqlite3
 import sys
 from contextlib import contextmanager
 
-DATA_DIR = os.environ.get('EATRACK_DATA', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data'))
-DB_PATH = os.path.join(DATA_DIR, 'eatrack.db')
+from famkit import legacy   # first: variables with the old names (EATRACK_*) still work for a while
+
+DATA_DIR = os.environ.get('WALLABY_DATA', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data'))
+DB_PATH = os.path.join(DATA_DIR, 'wallaby.db')
+legacy.move_file(os.path.join(DATA_DIR, 'eatrack.db'), DB_PATH)   # the app was eaTrack until 2026-11
 
 # v3: multi-family; v4: weekly plan; v5: English schema and stored values
 SCHEMA_VERSION = 5
@@ -44,8 +47,8 @@ CREATE TABLE IF NOT EXISTS families (
     name TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
--- Link with doTrack: where the weekly menu's foods go shopping (the token is a doTrack API token)
-CREATE TABLE IF NOT EXISTS dotrack_links (
+-- Link with Kooka: where the weekly menu's foods go shopping (the token is a Kooka API token)
+CREATE TABLE IF NOT EXISTS kooka_links (
     family_id INTEGER PRIMARY KEY REFERENCES families(id) ON DELETE CASCADE,
     url TEXT NOT NULL,
     token TEXT NOT NULL,
@@ -221,13 +224,14 @@ def init_db():
     os.makedirs(DATA_DIR, exist_ok=True)
     conn = connect()
     try:
+        legacy.rename_schema(conn)      # dotrack_links → kooka_links…
         existing = tables(conn)
         if migrations.needs_upgrade(conn, existing):
             from famkit import backup
             backup.create_backup('pre-migration')
             migrations.upgrade(conn, existing)
         conn.executescript(SCHEMA)
-        # weHub link (see famkit/hub.py): which weHub family/user/person each row is, NULL = not managed there
+        # Wombat link (see famkit/hub.py): which Wombat family/user/person each row is, NULL = not managed there
         for table, column in (('families', 'hub_id'), ('families', 'hub_version'), ('users', 'hub_id'), ('children', 'hub_id')):
             if column not in {r[1] for r in conn.execute(f'PRAGMA table_info({table})')}:
                 conn.execute(f'ALTER TABLE {table} ADD COLUMN {column} INTEGER')
@@ -241,6 +245,6 @@ def init_db():
         conn.close()
 
 
-# The shared code (famkit: mail, backups, weHub link, sign-in) reads EATRACK_* variables and uses this module
+# The shared code (famkit: mail, backups, Wombat link, sign-in) reads WALLABY_* variables and uses this module
 import famkit  # noqa: E402
-famkit.configure('EATRACK', 'eaTrack', sys.modules[__name__])
+famkit.configure('WALLABY', 'Wallaby', sys.modules[__name__])

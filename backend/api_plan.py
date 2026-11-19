@@ -132,7 +132,7 @@ def week_progress():
 
 @bp.get('/plan/documents')
 def plan_documents():
-    """The paediatrician's plans of the child archived in paTrack (weHub mode, for someone who uses paTrack):
+    """The paediatrician's plans of the child archived in Pelican (Wombat mode, for someone who uses Pelican):
     {available, documents: [{id, title, doc_type, doc_date, issuer, excerpt, url}]}."""
     from famkit import hub
     with db.transaction() as conn:
@@ -142,11 +142,11 @@ def plan_documents():
     if not ids or not child or not child['hub_id']:
         return jsonify(available=False, documents=[])
     try:
-        docs = hub.ask('patrack', 'GET', f"/plans?child={int(child['hub_id'])}", ids[0], ids[1])
+        docs = hub.ask('pelican', 'GET', f"/plans?child={int(child['hub_id'])}", ids[0], ids[1])
     except hub.AskError:
-        return jsonify(available=False, documents=[])    # no paTrack for this person (or not connected)
+        return jsonify(available=False, documents=[])    # no Pelican for this person (or not connected)
     except hub.Unavailable as e:
-        print(f'[patrack] {e}', flush=True)
-        return jsonify(available=True, documents=[], error=i18n.tr('paTrack is not reachable'))
+        print(f'[pelican] {e}', flush=True)
+        return jsonify(available=True, documents=[], error=i18n.tr('Pelican is not reachable'))
     keep = ('id', 'title', 'doc_type', 'doc_date', 'issuer', 'excerpt', 'url')
     return jsonify(available=True, documents=[{k: d.get(k) for k in keep} for d in docs if isinstance(d, dict)])

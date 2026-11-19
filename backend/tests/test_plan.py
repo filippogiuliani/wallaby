@@ -84,15 +84,15 @@ def test_plan_deleted_with_the_child(family):
         conn.close()
 
 
-def test_paediatrician_plans_from_patrack(family, monkeypatch):
-    """weHub mode: the child's plans archived in paTrack, asked through weHub; nothing for someone without paTrack."""
+def test_paediatrician_plans_from_pelican(family, monkeypatch):
+    """Wombat mode: the child's plans archived in Pelican, asked through Wombat; nothing for someone without Pelican."""
     import requests
 
     import db
     from famkit import hub
     c = family.c
-    assert ok(c.get(f'/api/plan/documents?child={family.one}')) == {'available': False, 'documents': []}   # no weHub
-    monkeypatch.setattr(hub, 'URL', 'http://wehub.test')
+    assert ok(c.get(f'/api/plan/documents?child={family.one}')) == {'available': False, 'documents': []}   # no Wombat
+    monkeypatch.setattr(hub, 'URL', 'http://wombat.test')
     monkeypatch.setattr(hub, 'KEY', 'k' * 40)
     with db.transaction() as conn:
         conn.execute('UPDATE families SET hub_id = 7')
@@ -109,10 +109,10 @@ def test_paediatrician_plans_from_patrack(family, monkeypatch):
     monkeypatch.setattr(requests, 'request', fake)
     r = ok(c.get(f'/api/plan/documents?child={family.one}'))
     assert r['available'] and [d['id'] for d in r['documents']] == [3] and 'ocr_text' not in r['documents'][0]
-    assert calls[-1] == ('GET', 'http://wehub.test/api/service/apps/patrack/families/7/plans?child=102', {'user': 10})
-    assert ok(c.get(f'/api/plan/documents?child={family.two}')) == {'available': False, 'documents': []}  # not from weHub
-    answer.update(code=403, body={'error': 'You do not use paTrack in this family'})
+    assert calls[-1] == ('GET', 'http://wombat.test/api/service/apps/pelican/families/7/plans?child=102', {'user': 10})
+    assert ok(c.get(f'/api/plan/documents?child={family.two}')) == {'available': False, 'documents': []}  # not from Wombat
+    answer.update(code=403, body={'error': 'You do not use Pelican in this family'})
     assert ok(c.get(f'/api/plan/documents?child={family.one}')) == {'available': False, 'documents': []}
-    answer.update(code=502, body={'error': 'paTrack is not reachable'})
+    answer.update(code=502, body={'error': 'Pelican is not reachable'})
     r = ok(c.get(f'/api/plan/documents?child={family.one}'))
-    assert r['available'] and r['documents'] == [] and r['error'] == 'paTrack non è raggiungibile'
+    assert r['available'] and r['documents'] == [] and r['error'] == 'Pelican non è raggiungibile'

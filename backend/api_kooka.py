@@ -1,11 +1,11 @@
-"""Link with doTrack (the family organizer): the foods of the weekly menu go to a doTrack shopping list.
+"""Link with Kooka (the family organizer): the foods of the weekly menu go to a Kooka shopping list.
 
-With weHub (EATRACK_HUB_URL/KEY set and the family coming from weHub) there is nothing to set up: eaTrack asks weHub
+With Wombat (WALLABY_HUB_URL/KEY set and the family coming from Wombat) there is nothing to set up: Wallaby asks Wombat
 (famkit.hub.ask),
-which passes the request on to doTrack with the key it already has; the admin only picks the list. Entries are added
-in doTrack as the person who sent them.
+which passes the request on to Kooka with the key it already has; the admin only picks the list. Entries are added
+in Kooka as the person who sent them.
 
-Without weHub the family admin pastes the doTrack address and an API token created in doTrack (Family page →
+Without Wombat the family admin pastes the Kooka address and an API token created in Kooka (Family page →
 Integrations), then picks the list. The token stays on this server: the browser never sees it."""
 from urllib.parse import urlparse
 
@@ -17,16 +17,16 @@ from famkit import hub
 from auth import require_admin
 from common import body, text
 
-bp = Blueprint('dotrack', __name__)
+bp = Blueprint('kooka', __name__)
 TIMEOUT = 10
 
 
 def _link(conn):
-    return conn.execute('SELECT * FROM dotrack_links WHERE family_id = ?', (g.family_id,)).fetchone()
+    return conn.execute('SELECT * FROM kooka_links WHERE family_id = ?', (g.family_id,)).fetchone()
 
 
 def _hub_family(conn):
-    """weHub's id of the current family when doTrack is reached through weHub, else None."""
+    """Wombat's id of the current family when Kooka is reached through Wombat, else None."""
     if not hub.enabled():
         return None
     r = conn.execute('SELECT hub_id FROM families WHERE id = ?', (g.family_id,)).fetchone()
@@ -40,34 +40,34 @@ def _user_hub_id():
 
 
 def _via_hub(hub_family, method, path, payload=None):
-    """doTrack through weHub (famkit.hub.ask)."""
+    """Kooka through Wombat (famkit.hub.ask)."""
     try:
-        return hub.ask('dotrack', method, path, hub_family, _user_hub_id(), payload, timeout=TIMEOUT + 2)
+        return hub.ask('kooka', method, path, hub_family, _user_hub_id(), payload, timeout=TIMEOUT + 2)
     except hub.AskError as e:
-        abort(502, 'doTrack is not connected to weHub' if 'not connected' in e.message
-              else 'doTrack does not know this family yet: sign in to doTrack once' if 'sign in' in e.message
-              else 'doTrack answered with an error')
+        abort(502, 'Kooka is not connected to Wombat' if 'not connected' in e.message
+              else 'Kooka does not know this family yet: sign in to Kooka once' if 'sign in' in e.message
+              else 'Kooka answered with an error')
     except hub.HubDown:
-        abort(502, 'weHub is not reachable')
+        abort(502, 'Wombat is not reachable')
     except hub.Unavailable as e:
-        abort(502, 'doTrack is not reachable' if 'not reachable' in str(e) else 'doTrack answered with an error')
+        abort(502, 'Kooka is not reachable' if 'not reachable' in str(e) else 'Kooka answered with an error')
 
 
 def _call(url, token, method, path, payload=None):
-    """A request to doTrack's API; errors become a 502 with a readable reason."""
+    """A request to Kooka's API; errors become a 502 with a readable reason."""
     try:
         r = requests.request(method, f"{url}/api{path}", json=payload, timeout=TIMEOUT, allow_redirects=False,
-                             headers={'Authorization': f'Bearer {token}', 'User-Agent': 'eaTrack'})
+                             headers={'Authorization': f'Bearer {token}', 'User-Agent': 'Wallaby'})
     except requests.RequestException:
-        abort(502, 'doTrack is not reachable')
+        abort(502, 'Kooka is not reachable')
     if r.status_code == 401:
-        abort(502, 'doTrack refused the token')
+        abort(502, 'Kooka refused the token')
     if r.status_code >= 400:
-        abort(502, 'doTrack answered with an error')
+        abort(502, 'Kooka answered with an error')
     try:
         return r.json()
     except ValueError:
-        abort(502, 'doTrack answered with an error')
+        abort(502, 'Kooka answered with an error')
 
 
 def _url(value):
@@ -95,18 +95,18 @@ def _choose(lists, wanted, current):
 
 def _save(url, token, list_id, list_name):
     with db.transaction() as conn:
-        conn.execute('''INSERT INTO dotrack_links (family_id, url, token, list_id, list_name) VALUES (?,?,?,?,?)
+        conn.execute('''INSERT INTO kooka_links (family_id, url, token, list_id, list_name) VALUES (?,?,?,?,?)
                         ON CONFLICT(family_id) DO UPDATE SET url = excluded.url, token = excluded.token,
                         list_id = excluded.list_id, list_name = excluded.list_name''', (g.family_id, url, token, list_id, list_name))
 
 
-@bp.get('/integrations/dotrack')
+@bp.get('/integrations/kooka')
 def status():
     with db.transaction() as conn:
         link = _link(conn)
         hub_family = _hub_family(conn)
     if hub_family:
-        # Through weHub: always available, only the list is chosen here
+        # Through Wombat: always available, only the list is chosen here
         return jsonify(connected=True, via_hub=True, list_id=link['list_id'] if link else None,
                        list_name=link['list_name'] if link else None)
     if not link or not link['token']:
@@ -114,9 +114,9 @@ def status():
     return jsonify(connected=True, url=link['url'], list_id=link['list_id'], list_name=link['list_name'])
 
 
-@bp.get('/integrations/dotrack/lists')
+@bp.get('/integrations/kooka/lists')
 def lists_via_hub():
-    """Through weHub: the shopping lists to choose from."""
+    """Through Wombat: the shopping lists to choose from."""
     require_admin()
     with db.transaction() as conn:
         hub_family = _hub_family(conn)
@@ -130,10 +130,10 @@ def _hub_lists(hub_family):
     return [{'id': x['id'], 'name': x['name']} for x in data if isinstance(x, dict)] if isinstance(data, list) else []
 
 
-@bp.put('/integrations/dotrack')
+@bp.put('/integrations/kooka')
 def connect():
-    """Save address and token (checked against doTrack); returns the shopping lists to choose from.
-    Through weHub only {list_id} is used."""
+    """Save address and token (checked against Kooka); returns the shopping lists to choose from.
+    Through Wombat only {list_id} is used."""
     require_admin()
     d = body()
     with db.transaction() as conn:
@@ -147,24 +147,24 @@ def connect():
     url = _url(d.get('url') or (current['url'] if current else ''))
     token = text(d.get('token'), 200) or (current['token'] if current else '')
     if not token:
-        abort(400, 'The doTrack token is required')
+        abort(400, 'The Kooka token is required')
     lists = _lists(url, token)
     list_id, list_name = _choose(lists, d.get('list_id'), current)
     _save(url, token, list_id, list_name)
     return jsonify(connected=True, url=url, list_id=list_id, list_name=list_name, lists=lists)
 
 
-@bp.delete('/integrations/dotrack')
+@bp.delete('/integrations/kooka')
 def disconnect():
     require_admin()
     with db.transaction() as conn:
-        conn.execute('DELETE FROM dotrack_links WHERE family_id = ?', (g.family_id,))
+        conn.execute('DELETE FROM kooka_links WHERE family_id = ?', (g.family_id,))
     return jsonify(connected=False)
 
 
-@bp.post('/integrations/dotrack/send')
+@bp.post('/integrations/kooka/send')
 def send():
-    """items: names of foods → added to the chosen doTrack list (doTrack skips what is already on it)."""
+    """items: names of foods → added to the chosen Kooka list (Kooka skips what is already on it)."""
     names = body().get('items')
     if not isinstance(names, list) or not names or len(names) > 200:
         abort(400, 'Nothing to send')
@@ -173,7 +173,7 @@ def send():
         link = _link(conn)
         hub_family = _hub_family(conn)
     if not link or not link['list_id'] or not (hub_family or link['token']):
-        abort(400, 'Connect doTrack and choose a list first')
+        abort(400, 'Connect Kooka and choose a list first')
     if hub_family:
         r = _via_hub(hub_family, 'POST', f"/lists/{link['list_id']}/items", {'items': names})
     else:

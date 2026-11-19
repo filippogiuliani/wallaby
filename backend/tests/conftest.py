@@ -5,10 +5,10 @@ import re
 import sys
 import tempfile
 
-# Modules read EATRACK_DATA on import: point it at a throwaway directory right away,
+# Modules read WALLABY_DATA on import: point it at a throwaway directory right away,
 # so no test can ever touch backend/data or a real data directory.
-os.environ['EATRACK_DATA'] = tempfile.mkdtemp(prefix='eatrack-test-')
-for k in [k for k in os.environ if k.startswith('EATRACK_') and k != 'EATRACK_DATA']:
+os.environ['WALLABY_DATA'] = tempfile.mkdtemp(prefix='wallaby-test-')
+for k in [k for k in os.environ if k.startswith('WALLABY_') and k != 'WALLABY_DATA']:
     del os.environ[k]
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -35,7 +35,7 @@ def outbox(monkeypatch):
 @pytest.fixture
 def app(tmp_path, monkeypatch, outbox):
     monkeypatch.setattr(db, 'DATA_DIR', str(tmp_path))
-    monkeypatch.setattr(db, 'DB_PATH', str(tmp_path / 'eatrack.db'))
+    monkeypatch.setattr(db, 'DB_PATH', str(tmp_path / 'wallaby.db'))
     monkeypatch.setattr(backup, 'BACKUP_DIR', str(tmp_path / 'backups'))
     monkeypatch.setattr(auth, 'SIGNUP_OPEN', True)
     monkeypatch.setattr(oidc, 'PROVIDERS', {})

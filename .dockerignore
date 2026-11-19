@@ -2,7 +2,7 @@
 **/node_modules
 backend/static
 backend/data
-eaTrack_data
+Wallaby_data
 .env
 **/__pycache__
 backend/tests

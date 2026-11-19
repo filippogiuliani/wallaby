@@ -19,13 +19,13 @@ from common import body, text, valid_date
 
 bp = Blueprint('auth', __name__)
 
-# EATRACK_SIGNUP=closed: new accounts only through an invitation link.
-# (EATRACK_REGISTRAZIONE=chiusa is the name used before v5 and still works.)
-SIGNUP_OPEN = (os.environ.get('EATRACK_SIGNUP', 'open') != 'closed'
-               and os.environ.get('EATRACK_REGISTRAZIONE', '') != 'chiusa')
-# EATRACK_PASSWORD_LOGIN=0: only the OIDC providers. With weHub (famkit/hub.py) always only the provider.
-PASSWORD_LOGIN = os.environ.get('EATRACK_PASSWORD_LOGIN', '1') not in ('0', 'off', 'false', 'no') and not hub.enabled()
-BASE_URL = os.environ.get('EATRACK_URL', '').rstrip('/')
+# WALLABY_SIGNUP=closed: new accounts only through an invitation link.
+# (WALLABY_REGISTRAZIONE=chiusa is the name used before v5 and still works.)
+SIGNUP_OPEN = (os.environ.get('WALLABY_SIGNUP', 'open') != 'closed'
+               and os.environ.get('WALLABY_REGISTRAZIONE', '') != 'chiusa')
+# WALLABY_PASSWORD_LOGIN=0: only the OIDC providers. With Wombat (famkit/hub.py) always only the provider.
+PASSWORD_LOGIN = os.environ.get('WALLABY_PASSWORD_LOGIN', '1') not in ('0', 'off', 'false', 'no') and not hub.enabled()
+BASE_URL = os.environ.get('WALLABY_URL', '').rstrip('/')
 EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 PASSWORD_MIN = 8
 NO_PASSWORD = '!'  # account created through an external provider, without a password

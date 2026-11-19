@@ -1,19 +1,19 @@
-"""eaTrack's part of the weHub link (the rest is famkit.hub): who this app's people are, what happens when a
+"""Wallaby's part of the Wombat link (the rest is famkit.hub): who this app's people are, what happens when a
 member leaves, how two families made separately are merged. Registered in app.py with hub.use(hub_hooks)."""
 from flask import g, jsonify
 
 from famkit import hub
 
 # ======================================================================
-# This app's people: the children (weHub people marked as children)
+# This app's people: the children (Wombat people marked as children)
 # ======================================================================
 
 def bump(conn, family_id):
-    pass  # eaTrack has no family version: pages reload on their own
+    pass  # Wallaby has no family version: pages reload on their own
 
 
 def apply_people(conn, family_id, snap):
-    """weHub children become eaTrack children. Someone removed in weHub is only archived: meals are never deleted."""
+    """Wombat children become Wallaby children. Someone removed in Wombat is only archived: meals are never deleted."""
     seen = set()
     for p in snap['people']:
         if p.get('kind') != 'child':
@@ -47,7 +47,7 @@ def on_member_removed(conn, family_id, user_id):
 
 
 def merge_data(conn, src, dst, report):
-    """eaTrack: foods and children with the same name become one (meals, jars and plans follow); the rest moves."""
+    """Wallaby: foods and children with the same name become one (meals, jars and plans follow); the rest moves."""
     for f in conn.execute('SELECT id, name FROM foods WHERE family_id = ?', (src,)).fetchall():
         t = conn.execute('SELECT id FROM foods WHERE family_id = ? AND name = ? COLLATE NOCASE', (dst, f['name'])).fetchone()
         if t:
@@ -81,13 +81,13 @@ def merge_data(conn, src, dst, report):
         conn.execute('DELETE FROM children WHERE id = ?', (c['id'],))
         hub.count(report, 'children_merged', 1)
     hub.count(report, 'jars', conn.execute('UPDATE jars SET family_id = ? WHERE family_id = ?', (dst, src)).rowcount)
-    if conn.execute('SELECT 1 FROM dotrack_links WHERE family_id = ?', (dst,)).fetchone():
-        conn.execute('DELETE FROM dotrack_links WHERE family_id = ?', (src,))
+    if conn.execute('SELECT 1 FROM kooka_links WHERE family_id = ?', (dst,)).fetchone():
+        conn.execute('DELETE FROM kooka_links WHERE family_id = ?', (src,))
     else:
-        conn.execute('UPDATE dotrack_links SET family_id = ? WHERE family_id = ?', (dst, src))
+        conn.execute('UPDATE kooka_links SET family_id = ? WHERE family_id = ?', (dst, src))
 
 
-# ---------- weHub's home: today's meals and the jars to use soon ----------
+# ---------- Wombat's home: today's meals and the jars to use soon ----------
 
 JAR_WARN_DAYS = {'fridge': 2, 'freezer': 30, 'pantry': 60}   # as in the interface (frontend/src/lib/constants.js)
 

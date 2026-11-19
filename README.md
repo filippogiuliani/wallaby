@@ -1,6 +1,6 @@
-# eaTrack – baby weaning diary
+# Wallaby – baby weaning diary
 
-> **Disclaimer / Esclusione di responsabilità.** eaTrack is provided *as is*, without any warranty: the authors accept **no responsibility or liability** for data loss, security problems, missed reminders, wrong information or any other consequence of using it. Read [DISCLAIMER.md](DISCLAIMER.md) before using it with real data. · Il software è fornito *così com'è*, senza garanzie: gli autori **non hanno alcuna responsabilità**. Leggi [DISCLAIMER.md](DISCLAIMER.md).
+> **Disclaimer / Esclusione di responsabilità.** Wallaby is provided *as is*, without any warranty: the authors accept **no responsibility or liability** for data loss, security problems, missed reminders, wrong information or any other consequence of using it. Read [DISCLAIMER.md](DISCLAIMER.md) before using it with real data. · Il software è fornito *così com'è*, senza garanzie: gli autori **non hanno alcuna responsabilità**. Leggi [DISCLAIMER.md](DISCLAIMER.md).
 
 A weaning diary shared by the whole family: meals per child, jars of baby food in the fridge and
 freezer, foods introduced, statistics and the pediatrician's weekly plan. Multi-user; the interface
@@ -17,7 +17,7 @@ is available in Italian, English, Spanish, Portuguese (Portugal), French and Ger
 
 The code shared with the other family apps is in the `backend/famkit` submodule
 ([famkit](https://github.com/filippogiuliani/famkit)): clone with
-`git clone --recurse-submodules https://github.com/filippogiuliani/eatrack.git`, or run `git submodule update --init` in a
+`git clone --recurse-submodules https://github.com/filippogiuliani/wallaby.git`, or run `git submodule update --init` in a
 clone made without it.
 
 ```sh
@@ -25,7 +25,7 @@ cp .env.example .env    # set the URL, SMTP and, optionally, OIDC providers
 ./rebuild.sh
 ```
 
-Data lives in `./eaTrack_data/` (mounted on `/app/data`): `eatrack.db` and `backups/`
+Data lives in `./Wallaby_data/` (mounted on `/app/data`): `wallaby.db` and `backups/`
 (one automatic backup a day, plus copies before migrations, imports and deletions).
 
 ### Upgrading from an earlier version
@@ -38,7 +38,7 @@ On start-up the database is upgraded automatically (a copy is saved first as `ba
 
 ## Accounts and families
 - Sign up with email/password, or with Google / any OIDC provider (see `.env.example`).
-- With `EATRACK_SIGNUP=closed` new accounts can only join through an invitation link (OIDC included).
+- With `WALLABY_SIGNUP=closed` new accounts can only join through an invitation link (OIDC included).
 - Each family shares its children, foods and pantry; other people are invited with a link (valid 7 days, single use).
 - Each family sees **only** its own data; export and import only cover the current family.
 - Deleting an account deletes its data (and the family, if it was the only member).
@@ -49,17 +49,17 @@ for each weekday and meal. The diary shows the week's progress and pre-fills emp
 
 ## Administration (command line)
 ```sh
-docker exec eatrack python manage.py backup          # backup right now
-docker exec eatrack python manage.py backups         # list backups
-docker exec eatrack python manage.py users           # users and families
+docker exec wallaby python manage.py backup          # backup right now
+docker exec wallaby python manage.py backups         # list backups
+docker exec wallaby python manage.py users           # users and families
 # full restore: stop the container, then
-docker run --rm -v "$(pwd)/eaTrack_data:/app/data" eatrack python manage.py restore <file.db>
+docker run --rm -v "$(pwd)/Wallaby_data:/app/data" wallaby python manage.py restore <file.db>
 ```
 
 ## Before opening it to the public
 - Complete the privacy notice and have it reviewed (`frontend/src/lib/privacy/index.js`, fields in `[ ]`, every language):
   the diary holds health data about minors (GDPR art. 9).
-- Serve the app over HTTPS (reverse proxy) with `EATRACK_COOKIE_SECURE=1` and `EATRACK_PROXY=1`.
+- Serve the app over HTTPS (reverse proxy) with `WALLABY_COOKIE_SECURE=1` and `WALLABY_PROXY=1`.
 - Configure a real SMTP server, otherwise email confirmation and password recovery won't arrive.
 
 ## Languages
@@ -102,7 +102,7 @@ Review the code yourself before relying on it, especially before exposing an ins
 - The software is provided **"as is", without warranty of any kind**, as stated in the [MIT License](LICENSE).
   The authors and contributors are **not liable** for any damage, data loss, security incident or other
   consequence arising from its use or misuse.
-- eaTrack is a personal note-taking tool. It is **not a medical device** and does not give medical advice:
+- Wallaby is a personal note-taking tool. It is **not a medical device** and does not give medical advice:
   feeding decisions, allergies and reactions must always be discussed with a pediatrician or other
   qualified professional.
 - Whoever installs and runs an instance is solely responsible for it: hosting, security, backups,
@@ -114,9 +114,9 @@ Review the code yourself before relying on it, especially before exposing an ins
 ## License
 [MIT](LICENSE). No warranty and no liability: see [DISCLAIMER.md](DISCLAIMER.md).
 
-## weHub (one sign-in and one family for all the family apps)
-Optional. With `EATRACK_HUB_URL` and `EATRACK_HUB_KEY` set (see `.env.example` and weHub's README), eaTrack signs people in
-only through the OIDC provider (the same Pocket ID as weHub), and takes the family from weHub: members, roles,
-people and who may use eaTrack. The family, members and people become read-only here, with a link to weHub; the copy is
-refreshed every 2 minutes and keeps working if weHub is down. Existing data is adopted, not recreated: run weHub's
-**Import** once (it reads `GET /api/hub/export` with the key). A family someone had made on their own can be merged into the shared one from weHub's import (`POST /api/hub/merge`: a database backup first, then everything moves; children and foods with the same name become one, meals included). Without these settings eaTrack works on its own as before.
+## Wombat (one sign-in and one family for all the family apps)
+Optional. With `WALLABY_HUB_URL` and `WALLABY_HUB_KEY` set (see `.env.example` and Wombat's README), Wallaby signs people in
+only through the OIDC provider (the same Pocket ID as Wombat), and takes the family from Wombat: members, roles,
+people and who may use Wallaby. The family, members and people become read-only here, with a link to Wombat; the copy is
+refreshed every 2 minutes and keeps working if Wombat is down. Existing data is adopted, not recreated: run Wombat's
+**Import** once (it reads `GET /api/hub/export` with the key). A family someone had made on their own can be merged into the shared one from Wombat's import (`POST /api/hub/merge`: a database backup first, then everything moves; children and foods with the same name become one, meals included). Without these settings Wallaby works on its own as before.

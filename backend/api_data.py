@@ -128,7 +128,7 @@ def export_excel():
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)
-    return send_file(buf, as_attachment=True, download_name=f'eatrack-{tr("diary")}-{_today()}.xlsx',
+    return send_file(buf, as_attachment=True, download_name=f'wallaby-{tr("diary")}-{_today()}.xlsx',
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 
@@ -144,7 +144,7 @@ def export_csv():
         w.writerow([r['date'], _weekday(r['date']), r['child'], label(r['meal_type']), r['food'] or '', label(r['category']),
                     label(r['amount']), tr('Yes') if r['reaction'] else '', r['notes']])
     return send_file(io.BytesIO(buf.getvalue().encode('utf-8')), as_attachment=True,
-                     download_name=f'eatrack-{tr("diary")}-{_today()}.csv', mimetype='text/csv')
+                     download_name=f'wallaby-{tr("diary")}-{_today()}.csv', mimetype='text/csv')
 
 
 # ---------- Family JSON backup ----------
@@ -152,7 +152,7 @@ def export_csv():
 def dump_family(conn, family_id):
     q = lambda sql: [dict(r) for r in conn.execute(sql, (family_id,))]
     return {
-        'app': 'eatrack',
+        'app': 'wallaby',
         'version': BACKUP_FORMAT,
         'exported_at': datetime.datetime.now().isoformat(timespec='seconds'),
         'family': conn.execute('SELECT name FROM families WHERE id = ?', (family_id,)).fetchone()['name'],
@@ -177,7 +177,7 @@ def export_json():
     with db.transaction() as conn:
         data = dump_family(conn, g.family_id)
     payload = json.dumps(data, ensure_ascii=False, indent=1).encode('utf-8')
-    return send_file(io.BytesIO(payload), as_attachment=True, download_name=f'eatrack-backup-{_today()}.json',
+    return send_file(io.BytesIO(payload), as_attachment=True, download_name=f'wallaby-backup-{_today()}.json',
                      mimetype='application/json')
 
 
@@ -192,8 +192,8 @@ def import_family(conn, data, family_id):
     """Replace the family's data with the backup's (any version). Ids are regenerated."""
     if migrations.is_legacy_backup(data):
         data = migrations.legacy_backup(data)
-    if not isinstance(data, dict) or data.get('app') != 'eatrack' or not isinstance(data.get('tables'), dict):
-        abort(400, 'The file is not an eaTrack backup')
+    if not isinstance(data, dict) or data.get('app') != 'wallaby' or not isinstance(data.get('tables'), dict):
+        abort(400, 'The file is not an Wallaby backup')
     t = data['tables']
     rows = {k: t.get(k) or [] for k in ['categories', 'children', 'foods', 'meals', 'meal_foods', 'jars', 'jar_foods']}
     if any(not isinstance(v, list) or any(not isinstance(x, dict) for x in v) for v in rows.values()):
@@ -272,7 +272,7 @@ def import_backup():
     if not f or not f.filename:
         abort(400, 'No file uploaded')
     if not f.filename.lower().endswith('.json'):
-        abort(400, 'Unsupported format: upload an eaTrack .json backup')
+        abort(400, 'Unsupported format: upload an Wallaby .json backup')
     try:
         data = json.load(f.stream)
     except (ValueError, UnicodeDecodeError):

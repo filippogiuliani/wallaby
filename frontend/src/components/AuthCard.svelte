@@ -5,7 +5,7 @@
 
 <main class="auth">
   <div class="box">
-    <a class="brand" href="#/"><img src="/icon.svg" alt="" width="32" height="32" /><span>eaTrack</span></a>
+    <a class="brand" href="#/"><img src="/icon.svg" alt="" width="32" height="32" /><span>Wallaby</span></a>
     <div class="card stack">
       <div>
         <h1>{title}</h1>

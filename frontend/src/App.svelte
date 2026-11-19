@@ -99,7 +99,7 @@
 {:else}
   <div class="shell">
     <nav class="nav" aria-label={t('nav.sections')}>
-      <a class="logo" href="#/diary"><img src="/icon.svg" alt="" width="28" height="28" /><span>eaTrack</span></a>
+      <a class="logo" href="#/diary"><img src="/icon.svg" alt="" width="28" height="28" /><span>Wallaby</span></a>
       <div class="nav-apps hide-mobile"><AppSwitcher hub={app.me.hub} lang={language.id} label /></div>
       <div class="children hide-mobile"><ChildSwitch /></div>
       {#each PAGES as p (p.id)}
@@ -116,7 +116,7 @@
     <main class="main">
       <!-- Phone: a slim top bar so signing out is always one tap away -->
       <div class="topbar hide-desktop">
-        <a class="brand" href="#/diary"><img src="/icon.svg" alt="" width="24" height="24" /><span>eaTrack</span></a>
+        <a class="brand" href="#/diary"><img src="/icon.svg" alt="" width="24" height="24" /><span>Wallaby</span></a>
         <AppSwitcher hub={app.me.hub} lang={language.id} />
         <button class="btn ghost sm" onclick={() => logout()} aria-label={t('account.sign_out')}>
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>{t('account.sign_out')}</span>

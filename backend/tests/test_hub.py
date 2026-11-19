@@ -1,4 +1,4 @@
-"""weHub mode for eaTrack: members and children come from weHub (simulated here); meals are never lost."""
+"""Wombat mode for Wallaby: members and children come from Wombat (simulated here); meals are never lost."""
 import pytest
 from flask import redirect
 
@@ -12,7 +12,7 @@ KEY = 'k' * 40
 
 
 class FakeHub:
-    """Stands in for weHub's service API."""
+    """Stands in for Wombat's service API."""
 
     def __init__(self):
         self.users = {}       # (issuer, subject) or email → user
@@ -46,9 +46,9 @@ class FakeProvider:
 
 
 @pytest.fixture
-def wehub(app, monkeypatch):
+def wombat(app, monkeypatch):
     fake = FakeHub()
-    monkeypatch.setattr(hub, 'URL', 'http://wehub.test')
+    monkeypatch.setattr(hub, 'URL', 'http://wombat.test')
     monkeypatch.setattr(hub, 'KEY', KEY)
     monkeypatch.setattr(hub, '_call', fake)
     monkeypatch.setattr(auth, 'PASSWORD_LOGIN', False)
@@ -77,24 +77,24 @@ def sign_in(c, fake, email, sub=None):
     return r.headers['Location'].split('#/', 1)[1]
 
 
-def test_sign_in_creates_family_and_children(client, wehub):
+def test_sign_in_creates_family_and_children(client, wombat):
     fil, sara = user(10, 'Fil', 'fil@example.com'), user(11, 'Sara', 'sara@example.com')
-    wehub.users = {'fil@example.com': fil, 'sara@example.com': sara}
-    family(wehub, members=[{**fil, 'role': 'admin'}, sara],
+    wombat.users = {'fil@example.com': fil, 'sara@example.com': sara}
+    family(wombat, members=[{**fil, 'role': 'admin'}, sara],
            people=[{'hub_id': 100, 'name': 'Fil', 'kind': 'adult', 'user_hub_id': 10},
                    {'hub_id': 102, 'name': 'Luca', 'kind': 'child', 'birth_date': '2025-01-10', 'user_hub_id': None},
                    {'hub_id': 103, 'name': 'Nonna', 'kind': 'adult', 'user_hub_id': None}])
-    wehub.access = {10: [1], 11: [1]}
+    wombat.access = {10: [1], 11: [1]}
     c = client()
-    assert sign_in(c, wehub, 'fil@example.com') == ''
+    assert sign_in(c, wombat, 'fil@example.com') == ''
     me = ok(c.get('/api/me'))
     assert me['family']['name'] == 'Casa' and [ch['name'] for ch in me['children']] == ['Luca']
     assert me['children'][0]['birth_date'] == '2025-01-10'
-    assert me['hub']['name'] == 'weHub' and me['password_login'] is False
+    assert me['hub']['name'] == 'Wombat' and me['password_login'] is False
     # The family's foods were created as for any new family
     assert ok(c.get('/api/foods'))
     luca = me['children'][0]['id']
-    # Name and birth date come from weHub; archiving stays here
+    # Name and birth date come from Wombat; archiving stays here
     ok(c.put(f'/api/children/{luca}', json={'name': 'Altro', 'archived': True}))
     me = ok(c.get('/api/me'))
     assert me['children'][0]['name'] == 'Luca' and me['children'][0]['archived']
@@ -105,7 +105,7 @@ def test_sign_in_creates_family_and_children(client, wehub):
     assert c.post('/api/login', json={'email': 'fil@example.com', 'password': PASSWORD}).status_code == 403
 
 
-def test_existing_child_and_meals_are_kept(client, wehub, monkeypatch):
+def test_existing_child_and_meals_are_kept(client, wombat, monkeypatch):
     monkeypatch.setattr(hub, 'URL', '')
     monkeypatch.setattr(auth, 'PASSWORD_LOGIN', True)
     c = client()
@@ -114,20 +114,20 @@ def test_existing_child_and_meals_are_kept(client, wehub, monkeypatch):
     food = ok(c.get('/api/foods'))[0]['id']
     ok(c.post('/api/meals', json={'child_id': child, 'date': '2026-03-01', 'meal_type': 'lunch',
                                   'foods': [{'id': food, 'amount': 'full'}]}), 201)
-    monkeypatch.setattr(hub, 'URL', 'http://wehub.test')
+    monkeypatch.setattr(hub, 'URL', 'http://wombat.test')
     monkeypatch.setattr(auth, 'PASSWORD_LOGIN', False)
     fil = user(10, 'Fil', 'fil@example.com')
-    wehub.users = {'fil@example.com': fil}
-    family(wehub, local_id=local['family']['id'], members=[{**fil, 'role': 'admin'}],
+    wombat.users = {'fil@example.com': fil}
+    family(wombat, local_id=local['family']['id'], members=[{**fil, 'role': 'admin'}],
            people=[{'hub_id': 102, 'name': 'Luca', 'kind': 'child', 'birth_date': None, 'local_id': child, 'user_hub_id': None}])
-    wehub.access = {10: [1]}
+    wombat.access = {10: [1]}
     c2 = client()
-    sign_in(c2, wehub, 'fil@example.com')
+    sign_in(c2, wombat, 'fil@example.com')
     me = ok(c2.get('/api/me'))
     assert me['family']['id'] == local['family']['id']
     assert me['children'] == [{'id': child, 'name': 'Luca', 'birth_date': '2025-01-10', 'archived': 0}]
-    # Removed in weHub: archived, the meals stay
-    family(wehub, version=2, local_id=local['family']['id'], members=[{**fil, 'role': 'admin'}], people=[])
+    # Removed in Wombat: archived, the meals stay
+    family(wombat, version=2, local_id=local['family']['id'], members=[{**fil, 'role': 'admin'}], people=[])
     hub.sync_all()
     me = ok(c2.get('/api/me'))
     assert me['children'][0]['archived'] == 1
@@ -135,12 +135,12 @@ def test_existing_child_and_meals_are_kept(client, wehub, monkeypatch):
         assert conn.execute('SELECT COUNT(*) FROM meals WHERE child_id = ?', (child,)).fetchone()[0] == 1
 
 
-def test_no_access(client, wehub):
-    wehub.users = {'tata@example.com': user(12, 'Tata', 'tata@example.com')}
-    assert 'login?error=' in sign_in(client(), wehub, 'tata@example.com')
+def test_no_access(client, wombat):
+    wombat.users = {'tata@example.com': user(12, 'Tata', 'tata@example.com')}
+    assert 'login?error=' in sign_in(client(), wombat, 'tata@example.com')
 
 
-def test_export_for_the_import(client, wehub, monkeypatch):
+def test_export_for_the_import(client, wombat, monkeypatch):
     monkeypatch.setattr(hub, 'URL', '')
     monkeypatch.setattr(auth, 'PASSWORD_LOGIN', True)
     sign_up(client(), child='Luca', birth_date='2025-01-10')
@@ -154,7 +154,7 @@ def merge(c, into, families, key=KEY):
     return c.post('/api/hub/merge', json={'into': into, 'families': families}, headers={'Authorization': 'Bearer ' + key})
 
 
-def test_merge_two_families_made_separately(client, wehub, monkeypatch):
+def test_merge_two_families_made_separately(client, wombat, monkeypatch):
     """Each parent tracked the same baby in their own family: one family, one child, all the meals."""
     monkeypatch.setattr(hub, 'URL', '')
     monkeypatch.setattr(auth, 'PASSWORD_LOGIN', True)

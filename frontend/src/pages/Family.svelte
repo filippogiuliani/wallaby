@@ -20,32 +20,32 @@
 
   const admin = $derived(family?.role === 'admin');
 
-  // --- doTrack (family organizer): where the weekly menu's foods go shopping
+  // --- Kooka (family organizer): where the weekly menu's foods go shopping
   let dt = $state(null);
   let dtForm = $state({ url: '', token: '' });
   let dtLists = $state([]);
   $effect(() => {
     app.me?.family?.id;
-    get('/integrations/dotrack').then((d) => {
+    get('/integrations/kooka').then((d) => {
       dt = d; dtForm.url = d.url ?? '';
-      // Through weHub nothing to connect: the admin only needs the lists to pick from
-      if (d.via_hub && admin) get('/integrations/dotrack/lists').then((l) => (dtLists = l)).catch(showError);
+      // Through Wombat nothing to connect: the admin only needs the lists to pick from
+      if (d.via_hub && admin) get('/integrations/kooka/lists').then((l) => (dtLists = l)).catch(showError);
     }).catch(() => {});
   });
   async function dtConnect(e) {
     e?.preventDefault();
     try {
-      const r = await put('/integrations/dotrack', { url: dtForm.url, token: dtForm.token });
+      const r = await put('/integrations/kooka', { url: dtForm.url, token: dtForm.token });
       dt = r; dtLists = r.lists; dtForm.token = '';
-      toast(t('dotrack.connected'));
+      toast(t('kooka.connected'));
     } catch (err) { showError(err); }
   }
   async function dtChoose(id) {
-    try { const r = await put('/integrations/dotrack', { list_id: Number(id) }); dt = r; dtLists = r.lists; } catch (err) { showError(err); }
+    try { const r = await put('/integrations/kooka', { list_id: Number(id) }); dt = r; dtLists = r.lists; } catch (err) { showError(err); }
   }
   async function dtDisconnect() {
-    if (!confirm(t('dotrack.confirm_disconnect'))) return;
-    try { dt = await del('/integrations/dotrack'); dtLists = []; dtForm = { url: '', token: '' }; } catch (err) { showError(err); }
+    if (!confirm(t('kooka.confirm_disconnect'))) return;
+    try { dt = await del('/integrations/kooka'); dtLists = []; dtForm = { url: '', token: '' }; } catch (err) { showError(err); }
   }
   const user = $derived(app.me?.user);
 
@@ -80,7 +80,7 @@
   async function shareInvite() {
     const text = t('invite.message', { family: family.name });
     if (navigator.share) {
-      try { await navigator.share({ title: 'eaTrack', text, url: invite.link }); return; } catch { /* cancelled */ }
+      try { await navigator.share({ title: 'Wallaby', text, url: invite.link }); return; } catch { /* cancelled */ }
     }
     try { await navigator.clipboard.writeText(invite.link); toast(t('invite.copied')); } catch { /* the link stays visible */ }
   }
@@ -276,50 +276,50 @@
     <p class="tiny muted">{#if !app.me.hub}{t('account.delete_note')} {/if}<a href="#/privacy">{t('auth.privacy_notice')}</a></p>
   </section>
 
-  <!-- doTrack -->
+  <!-- Kooka -->
   <section class="card stack">
-    <h2>🛒 {t('dotrack.title')}</h2>
-    <p class="muted small">{t('dotrack.intro')}</p>
+    <h2>🛒 {t('kooka.title')}</h2>
+    <p class="muted small">{t('kooka.intro')}</p>
     {#if dt?.via_hub}
-      <p class="small">{t('dotrack.via_hub')}{#if dt.list_name} · <b>{dt.list_name}</b>{/if}</p>
+      <p class="small">{t('kooka.via_hub')}{#if dt.list_name} · <b>{dt.list_name}</b>{/if}</p>
       {#if admin}
         {#if dtLists.length}
-          <label class="field"><span class="label">{t('dotrack.list')}</span>
+          <label class="field"><span class="label">{t('kooka.list')}</span>
             <select class="input" value={dt.list_id ?? ''} onchange={(e) => dtChoose(e.currentTarget.value)}>
-              <option value="" disabled>{t('dotrack.choose_list')}</option>
+              <option value="" disabled>{t('kooka.choose_list')}</option>
               {#each dtLists as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
             </select></label>
         {:else}
-          <p class="small">{t('dotrack.no_list_hub')}</p>
+          <p class="small">{t('kooka.no_list_hub')}</p>
         {/if}
       {:else if !dt.list_id}
-        <p class="small muted">{t('dotrack.admin_only')}</p>
+        <p class="small muted">{t('kooka.admin_only')}</p>
       {/if}
     {:else}
     {#if dt?.connected}
-      <p class="small">{t('dotrack.connected_to', { url: dt.url })}{#if dt.list_name} · <b>{dt.list_name}</b>{/if}</p>
+      <p class="small">{t('kooka.connected_to', { url: dt.url })}{#if dt.list_name} · <b>{dt.list_name}</b>{/if}</p>
     {/if}
     {#if admin}
       <form class="stack" onsubmit={dtConnect}>
-        <label class="field"><span class="label">{t('dotrack.url')}</span>
-          <input class="input" type="url" bind:value={dtForm.url} placeholder="https://dotrack.example.com" required /></label>
-        <label class="field"><span class="label">{t('dotrack.token')}</span>
-          <input class="input" bind:value={dtForm.token} placeholder={dt?.connected ? t('dotrack.token_keep') : 'dt_…'} autocomplete="off" /></label>
-        <p class="tiny muted">{t('dotrack.token_note')}</p>
-        <button class="btn" disabled={!dtForm.url.trim() || (!dt?.connected && !dtForm.token.trim())}>{dt?.connected ? t('dotrack.check') : t('dotrack.connect')}</button>
+        <label class="field"><span class="label">{t('kooka.url')}</span>
+          <input class="input" type="url" bind:value={dtForm.url} placeholder="https://kooka.example.com" required /></label>
+        <label class="field"><span class="label">{t('kooka.token')}</span>
+          <input class="input" bind:value={dtForm.token} placeholder={dt?.connected ? t('kooka.token_keep') : 'dt_…'} autocomplete="off" /></label>
+        <p class="tiny muted">{t('kooka.token_note')}</p>
+        <button class="btn" disabled={!dtForm.url.trim() || (!dt?.connected && !dtForm.token.trim())}>{dt?.connected ? t('kooka.check') : t('kooka.connect')}</button>
       </form>
       {#if dt?.connected && dtLists.length}
-        <label class="field"><span class="label">{t('dotrack.list')}</span>
+        <label class="field"><span class="label">{t('kooka.list')}</span>
           <select class="input" value={dt.list_id ?? ''} onchange={(e) => dtChoose(e.currentTarget.value)}>
-            <option value="" disabled>{t('dotrack.choose_list')}</option>
+            <option value="" disabled>{t('kooka.choose_list')}</option>
             {#each dtLists as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
           </select></label>
       {:else if dt?.connected && !dt.list_id}
-        <p class="small">{t('dotrack.no_list')}</p>
+        <p class="small">{t('kooka.no_list')}</p>
       {/if}
-      {#if dt?.connected}<button class="btn ghost sm" onclick={dtDisconnect}>{t('dotrack.disconnect')}</button>{/if}
+      {#if dt?.connected}<button class="btn ghost sm" onclick={dtDisconnect}>{t('kooka.disconnect')}</button>{/if}
     {:else if !dt?.connected}
-      <p class="small muted">{t('dotrack.admin_only')}</p>
+      <p class="small muted">{t('kooka.admin_only')}</p>
     {/if}
     {/if}
   </section>
