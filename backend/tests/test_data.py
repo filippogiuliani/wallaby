@@ -108,7 +108,7 @@ def test_import_of_a_backup_made_before_v5(family):
     assert {x['name']: categories[x['category_id']] for x in ok(f.c.get('/api/foods'))} == {'Zucca': 'vegetables', 'Orata': 'fish'}
     plan = ok(f.c.get(f'/api/plan?child={child}'))
     orata = next(x['id'] for x in ok(f.c.get('/api/foods')) if x['name'] == 'Orata')
-    assert plan == {'frequencies': [{'macro': 'fish', 'min': 2, 'max': None}],
+    assert plan == {'frequencies': [{'macro': 'fish', 'min': 2, 'max': None, 'main_only': True}],
                     'menu': [{'weekday': 2, 'meal_type': 'lunch', 'notes': 'n', 'foods': [orata]}]}
 
 

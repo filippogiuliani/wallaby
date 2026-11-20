@@ -77,7 +77,7 @@ def test_upgrade_from_v4_italian_schema(app, tmp_path, monkeypatch):
     assert (meal['meal_type'], meal['notes'], meal['reaction']) == ('snack', 'ok', 1)
     assert {(x['name'], x['amount']) for x in meal['foods']} == {('Zucca', 'puree'), ('Pollo', 'refused')}
     assert [(j['label'], j['location']) for j in meal['jars']] == [('12', 'pantry')]
-    assert ok(c.get('/api/plan?child=5')) == {'frequencies': [{'macro': 'meat', 'min': 1, 'max': 3}],
+    assert ok(c.get('/api/plan?child=5')) == {'frequencies': [{'macro': 'white_meat', 'min': 1, 'max': 3, 'main_only': True}],
                                               'menu': [{'weekday': 6, 'meal_type': 'dinner', 'notes': 'poco sale', 'foods': [8]}]}
     conn = sqlite3.connect(path)
     assert conn.execute('PRAGMA user_version').fetchone()[0] == db.SCHEMA_VERSION

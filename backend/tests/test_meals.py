@@ -117,6 +117,6 @@ def test_stats(family):
     s = ok(f.c.get(f'/api/stats?child={f.one}&days=7&today=2026-11-08'))
     assert (s['main_meals'], s['snacks'], s['days_logged']) == (2, 1, 2)
     by_macro = {c['macro']: c for c in s['categories']}
-    assert by_macro['meat']['main'] == 1 and by_macro['fish']['main'] == 1
+    assert by_macro['white_meat']['main'] == 1 and by_macro['fish']['main'] == 1
     assert by_macro['fruit']['snack'] == 1
     assert [r['name'] for r in s['refused']] == ['Carota']

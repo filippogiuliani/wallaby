@@ -173,8 +173,8 @@ def test_merge_two_families_made_separately(client, wombat, monkeypatch):
     cat = ok(sara.get('/api/foods'))[0]['category_id']
     custom = ok(sara.post('/api/foods', json={'name': 'Pappa di Sara', 'category_id': cat}), 201)
     with db.transaction() as conn:
-        conn.execute("INSERT INTO plan_frequencies VALUES (?, 'fish', 1, 2)", (luca_b,))
-        conn.execute("INSERT INTO plan_frequencies VALUES (?, 'fish', 2, 3)", (luca_a,))
+        conn.execute("INSERT INTO plan_frequencies (child_id, macro, min_times, max_times) VALUES (?, 'fish', 1, 2)", (luca_b,))
+        conn.execute("INSERT INTO plan_frequencies (child_id, macro, min_times, max_times) VALUES (?, 'fish', 2, 3)", (luca_a,))
         conn.execute('INSERT INTO jars (family_id, label, location, made_on) VALUES (?,?,?,?)', (b['family']['id'], 'J1', 'freezer', '2026-03-01'))
     r = ok(merge(client(), a['family']['id'], [b['family']['id']]))
     assert r['report']['children_merged'] == 1 and r['report']['meals'] == 1 and r['report']['jars'] == 1
