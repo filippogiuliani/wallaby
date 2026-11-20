@@ -25,8 +25,8 @@ BASE_CATEGORIES = [
     ('carbs', 'carbs', 'carbs'),
     ('broth', 'broth', 'broth'),
     ('vegetables', 'vegetables', 'vegetables'),
-    ('white_meat', 'protein', 'meat'),
-    ('red_meat', 'protein', 'meat'),
+    ('white_meat', 'protein', 'white_meat'),     # the pediatrician counts white and red meat apart
+    ('red_meat', 'protein', 'red_meat'),
     ('fish', 'protein', 'fish'),
     ('legumes', 'protein', 'legumes'),
     ('eggs', 'protein', 'eggs'),
@@ -238,6 +238,14 @@ def init_db():
         conn.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_families_hub ON families(hub_id)')
         conn.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_hub ON users(hub_id)')
         seed_categories(conn)
+        # white and red meat were one macro ("meat") until 2026-11: each its own now, the old target goes to white meat
+        conn.execute("UPDATE categories SET macro = key WHERE key IN ('white_meat', 'red_meat') AND macro = 'meat'")
+        conn.execute("INSERT OR IGNORE INTO plan_frequencies (child_id, macro, min_times, max_times) "
+                     "SELECT child_id, 'white_meat', min_times, max_times FROM plan_frequencies WHERE macro = 'meat'")
+        conn.execute("DELETE FROM plan_frequencies WHERE macro = 'meat'")
+        # weekly plan: count a food only at lunch and dinner (NULL = the default: yes for proteins, see api_plan)
+        if 'main_only' not in {r[1] for r in conn.execute('PRAGMA table_info(plan_frequencies)')}:
+            conn.execute('ALTER TABLE plan_frequencies ADD COLUMN main_only INTEGER')
         conn.execute(f'PRAGMA user_version = {SCHEMA_VERSION}')
         conn.execute('PRAGMA journal_mode = WAL')
         conn.commit()

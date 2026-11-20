@@ -1,7 +1,9 @@
 """API: the pediatrician's weekly plan (per child).
 
 Two parts, both optional:
-- frequencies: how many times a week to offer each macro category (minimum and/or maximum);
+- frequencies: how many times a week to offer each macro category (minimum and/or maximum), counted at lunch and
+  dinner only (main_only, the default for proteins: the yogurt at snack is not one of the "2 fresh cheeses a week") or
+  at every meal;
 - menu: for each weekday and meal, the planned foods and a note.
 """
 import datetime
@@ -21,9 +23,20 @@ def _macros(conn):
     return [r[0] for r in conn.execute('SELECT macro FROM categories GROUP BY macro ORDER BY MIN(sort_order)')]
 
 
+def default_main_only(conn):
+    """{macro: counted only at lunch and dinner by default}: the proteins yes, fruit, vegetables and the rest no."""
+    return {r['macro']: r['protein'] == 1 for r in conn.execute(
+        "SELECT macro, MAX(diary_group = 'protein') AS protein FROM categories GROUP BY macro")}
+
+
+def main_only(conn, macro, stored):
+    return bool(stored) if stored is not None else default_main_only(conn).get(macro, False)
+
+
 def read_plan(conn, child_id):
-    frequencies = [{'macro': r['macro'], 'min': r['min_times'], 'max': r['max_times']} for r in conn.execute(
-        'SELECT macro, min_times, max_times FROM plan_frequencies WHERE child_id = ?', (child_id,))]
+    frequencies = [{'macro': r['macro'], 'min': r['min_times'], 'max': r['max_times'],
+                    'main_only': main_only(conn, r['macro'], r['main_only'])} for r in conn.execute(
+        'SELECT macro, min_times, max_times, main_only FROM plan_frequencies WHERE child_id = ?', (child_id,))]
     menu = []
     for m in conn.execute('SELECT id, weekday, meal_type, notes FROM plan_meals WHERE child_id = ? ORDER BY weekday', (child_id,)):
         foods = [r[0] for r in conn.execute(
@@ -64,7 +77,10 @@ def write_plan(conn, child_id, d, check_foods=True):
             continue
         if low is not None and high is not None and low > high:
             abort(400, 'The minimum cannot exceed the maximum')
-        conn.execute('INSERT OR REPLACE INTO plan_frequencies VALUES (?,?,?,?)', (child_id, f['macro'], low, high))
+        only = f.get('main_only')
+        only = None if only is None or bool(only) == default_main_only(conn).get(f['macro'], False) else int(bool(only))
+        conn.execute('INSERT OR REPLACE INTO plan_frequencies (child_id, macro, min_times, max_times, main_only) VALUES (?,?,?,?,?)',
+                     (child_id, f['macro'], low, high, only))
 
     for m in menu:
         if not isinstance(m, dict) or m.get('meal_type') not in db.MEAL_TYPES or m.get('weekday') not in range(7):
@@ -111,22 +127,31 @@ def copy_plan():
 @bp.get('/plan/week')
 def week_progress():
     """Progress against the frequencies in the week (Monday–Sunday) containing ?date=.
-    Counts the meals (not the single foods) where the macro category appears, refusals excluded."""
+    Counts the meals (not the single foods) where the macro category appears, refusals excluded; for the frequencies
+    counted at lunch and dinner only (main_only), only those meals."""
     date = datetime.date.fromisoformat(valid_date(request.args.get('date') or datetime.date.today().isoformat()))
     monday = date - datetime.timedelta(days=date.weekday())
     sunday = monday + datetime.timedelta(days=6)
     with db.transaction() as conn:
         child_id = requested_child(conn)
         targets = {r['macro']: r for r in conn.execute(
-            'SELECT macro, min_times, max_times FROM plan_frequencies WHERE child_id = ?', (child_id,))}
-        counts = {r['macro']: r['n'] for r in conn.execute(
-            '''SELECT c.macro, COUNT(DISTINCT m.id) AS n FROM meals m
-               JOIN meal_foods mf ON mf.meal_id = m.id JOIN foods f ON f.id = mf.food_id
-               JOIN categories c ON c.id = f.category_id
-               WHERE m.child_id = ? AND m.date BETWEEN ? AND ? AND mf.amount != 'refused'
-               GROUP BY c.macro''', (child_id, monday.isoformat(), sunday.isoformat()))}
-        rows = [{'macro': m, 'times': counts.get(m, 0), 'min': targets[m]['min_times'], 'max': targets[m]['max_times']}
-                for m in _macros(conn) if m in targets]
+            'SELECT macro, min_times, max_times, main_only FROM plan_frequencies WHERE child_id = ?', (child_id,))}
+        main = ','.join(f"'{t}'" for t in db.MAIN_MEALS)
+        counts = {}
+        for r in conn.execute(
+                f'''SELECT c.macro, COUNT(DISTINCT m.id) AS n, COUNT(DISTINCT CASE WHEN m.meal_type IN ({main}) THEN m.id END) AS n_main
+                    FROM meals m JOIN meal_foods mf ON mf.meal_id = m.id JOIN foods f ON f.id = mf.food_id
+                    JOIN categories c ON c.id = f.category_id
+                    WHERE m.child_id = ? AND m.date BETWEEN ? AND ? AND mf.amount != 'refused'
+                    GROUP BY c.macro''', (child_id, monday.isoformat(), sunday.isoformat())):
+            counts[r['macro']] = (r['n'], r['n_main'])
+        rows = []
+        for m in _macros(conn):
+            if m in targets:
+                only = main_only(conn, m, targets[m]['main_only'])
+                n, n_main = counts.get(m, (0, 0))
+                rows.append({'macro': m, 'times': n_main if only else n, 'min': targets[m]['min_times'],
+                             'max': targets[m]['max_times'], 'main_only': only})
     return jsonify(start=monday.isoformat(), end=sunday.isoformat(), frequencies=rows)
 
 

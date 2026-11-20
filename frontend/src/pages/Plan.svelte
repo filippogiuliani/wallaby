@@ -47,11 +47,14 @@
   const shortDate = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 
   const macros = $derived([...new Set(app.categories.map((c) => c.macro))]);
+  // proteins are counted at lunch and dinner only unless chosen otherwise (the yogurt at snack is not a cheese)
+  const proteinByDefault = (m) => app.categories.some((c) => c.macro === m && c.diary_group === 'protein');
   const siblings = $derived(activeChildren().filter((c) => c.id !== app.childId));
 
   function apply(p) {
     const saved = Object.fromEntries(p.frequencies.map((f) => [f.macro, f]));
-    frequencies = Object.fromEntries(macros.map((m) => [m, { min: saved[m]?.min ?? null, max: saved[m]?.max ?? null }]));
+    frequencies = Object.fromEntries(macros.map((m) => [m, { min: saved[m]?.min ?? null, max: saved[m]?.max ?? null,
+                                                              main_only: saved[m]?.main_only ?? proteinByDefault(m) }]));
     menu = p.menu;
   }
   async function load() {
@@ -64,7 +67,7 @@
   async function save(message = t('common.saved')) {
     const body = {
       child_id: app.childId,
-      frequencies: Object.entries(frequencies).map(([macro, f]) => ({ macro, min: f.min, max: f.max })),
+      frequencies: Object.entries(frequencies).map(([macro, f]) => ({ macro, min: f.min, max: f.max, main_only: f.main_only })),
       menu,
     };
     try { apply(await put('/plan', body)); toast(message); return true; } catch (e) { showError(e); await load(); return false; }
@@ -156,7 +159,7 @@
       <p class="muted small">{t('plan.frequencies_note')}</p>
       <table class="freq">
         <thead>
-          <tr><th></th><th>{t('plan.min')}</th><th>{t('plan.max')}</th></tr>
+          <tr><th></th><th>{t('plan.min')}</th><th>{t('plan.max')}</th><th class="mo">{t('plan.main_only')}</th></tr>
         </thead>
         <tbody>
           {#each macros.filter((m) => frequencies[m]) as m (m)}
@@ -165,6 +168,8 @@
               <th scope="row">{categoryName(m)}</th>
               <td><input class="input num" type="number" min="0" max="28" inputmode="numeric" bind:value={f.min} onchange={() => save()} aria-label={t('plan.min_of', { name: categoryName(m) })} /></td>
               <td><input class="input num" type="number" min="0" max="28" inputmode="numeric" bind:value={f.max} onchange={() => save()} aria-label={t('plan.max_of', { name: categoryName(m) })} /></td>
+              <td class="mo"><input type="checkbox" bind:checked={f.main_only} onchange={() => (filled(f.min) || filled(f.max)) && save()}
+                                    aria-label={t('plan.main_only_of', { name: categoryName(m) })} /></td>
             </tr>
           {/each}
         </tbody>
@@ -270,6 +275,7 @@
 {/if}
 
 <style>
+  .mo { text-align: center; font-size: 0.75rem; font-weight: 500; white-space: normal; max-width: 6.5rem; }
   .head { margin-bottom: 12px; }
   .back { color: var(--muted); text-decoration: none; }
   .back:hover { color: var(--primary); }

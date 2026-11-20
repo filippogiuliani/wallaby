@@ -13,7 +13,7 @@ def test_empty_plan_and_saving(family):
     f = family
     assert ok(f.c.get(f'/api/plan?child={f.one}')) == EMPTY
     p = ok(save(f, f.one,
-                frequencies=[{'macro': 'fish', 'min': 2, 'max': 3}, {'macro': 'meat', 'min': None, 'max': ''},
+                frequencies=[{'macro': 'fish', 'min': 2, 'max': 3}, {'macro': 'white_meat', 'min': None, 'max': ''},
                              {'macro': 'eggs', 'max': '1'}],
                 menu=[{'weekday': 0, 'meal_type': 'lunch', 'notes': '30 g', 'foods': [f.food['Zucchina'], f.food['Platessa']]},
                       {'weekday': 1, 'meal_type': 'dinner', 'notes': '  ', 'foods': []}]))
@@ -68,7 +68,7 @@ def test_copy_plan_between_siblings(family):
     f = family
     p = ok(save(f, f.one, frequencies=[{'macro': 'fish', 'min': 2}],
                 menu=[{'weekday': 3, 'meal_type': 'dinner', 'notes': '', 'foods': [f.food['Pollo']]}]))
-    ok(save(f, f.two, frequencies=[{'macro': 'meat', 'min': 5}]))
+    ok(save(f, f.two, frequencies=[{'macro': 'red_meat', 'min': 5}]))
     assert ok(f.c.post('/api/plan/copy', json={'from': f.one, 'to': f.two})) == p  # replaces the existing one
     assert f.c.post('/api/plan/copy', json={'from': f.one, 'to': f.one}).status_code == 400
 
@@ -116,3 +116,38 @@ def test_paediatrician_plans_from_pelican(family, monkeypatch):
     answer.update(code=502, body={'error': 'Pelican is not reachable'})
     r = ok(c.get(f'/api/plan/documents?child={family.one}'))
     assert r['available'] and r['documents'] == [] and r['error'] == 'Pelican non è raggiungibile'
+
+
+def test_the_pediatricians_week_white_and_red_meat_and_no_snack_dairy(family):
+    """Fish 3-4, legumes 3-4, fresh cheese 2, white meat 2-3, red meat 1-2, eggs 2: white and red meat apart, and the
+    proteins counted at lunch and dinner only (the yogurt at snack is not a fresh cheese)."""
+    f = family
+    p = ok(save(f, f.one, frequencies=[{'macro': 'fish', 'min': 3, 'max': 4}, {'macro': 'legumes', 'min': 3, 'max': 4},
+                                       {'macro': 'dairy', 'min': 2, 'max': 2}, {'macro': 'white_meat', 'min': 2, 'max': 3},
+                                       {'macro': 'red_meat', 'min': 1, 'max': 2}, {'macro': 'eggs', 'min': 2, 'max': 2},
+                                       {'macro': 'fruit', 'min': 7}]))
+    only = {x['macro']: x['main_only'] for x in p['frequencies']}
+    assert only == {'fish': True, 'legumes': True, 'dairy': True, 'white_meat': True, 'red_meat': True, 'eggs': True,
+                    'fruit': False}                                    # proteins at lunch and dinner, fruit at any meal
+    f.meal(f.one, '2026-11-09', ['Pollo'])
+    f.meal(f.one, '2026-11-10', ['Manzo'], meal_type='dinner')
+    f.meal(f.one, '2026-11-11', ['Ricotta vaccina'])
+    f.meal(f.one, '2026-11-11', ['Ricotta vaccina', 'Mela'], meal_type='snack')    # snack: the cheese does not count
+    f.meal(f.one, '2026-11-12', ['Mela'], meal_type='breakfast')
+    w = {x['macro']: x['times'] for x in ok(f.c.get(f'/api/plan/week?child={f.one}&date=2026-11-12'))['frequencies']}
+    assert (w['white_meat'], w['red_meat'], w['dairy'], w['fruit']) == (1, 1, 1, 2)
+    # the box can be changed: dairy counted at every meal too
+    ok(save(f, f.one, frequencies=[{'macro': 'dairy', 'min': 2, 'max': 2, 'main_only': False}]))
+    w = {x['macro']: x['times'] for x in ok(f.c.get(f'/api/plan/week?child={f.one}&date=2026-11-12'))['frequencies']}
+    assert w['dairy'] == 2
+
+
+def test_an_old_meat_target_goes_to_white_meat(family):
+    f = family
+    with db.transaction() as conn:
+        conn.execute("UPDATE categories SET macro = 'meat' WHERE key IN ('white_meat', 'red_meat')")
+        conn.execute("INSERT INTO plan_frequencies (child_id, macro, min_times, max_times) VALUES (?, 'meat', 2, 4)", (f.one,))
+    db.init_db()
+    p = ok(f.c.get(f'/api/plan?child={f.one}'))
+    assert [(x['macro'], x['min'], x['max']) for x in p['frequencies']] == [('white_meat', 2, 4)]
+    assert {c['key']: c['macro'] for c in ok(f.c.get('/api/categories'))}['red_meat'] == 'red_meat'
